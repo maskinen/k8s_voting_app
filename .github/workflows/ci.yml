@@ -8,7 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # <-- MÅSTE finnas för GHCR
+      packages: write   # needed for GHCR
+    env:
+      REGISTRY: ghcr.io/maskinen
     steps:
       - uses: actions/checkout@v4
 
@@ -21,15 +23,24 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}          # ex. "maskinen"
-          password: ${{ secrets.GITHUB_TOKEN }}  # inbyggd token
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push vote
+      - name: Build & push vote
         run: |
-          docker buildx build vote   -t ghcr.io/maskinen/vote:${TAG}   -t ghcr.io/maskinen/vote:latest   --push
-      - name: Build & Push worker
+          docker buildx build vote \
+            -t $REGISTRY/vote:${TAG} \
+            -t $REGISTRY/vote:latest \
+            --push
+      - name: Build & push worker
         run: |
-          docker buildx build worker -t ghcr.io/maskinen/worker:${TAG} -t ghcr.io/maskinen/worker:latest --push
-      - name: Build & Push result
+          docker buildx build worker \
+            -t $REGISTRY/worker:${TAG} \
+            -t $REGISTRY/worker:latest \
+            --push
+      - name: Build & push result
         run: |
-          docker buildx build result -t ghcr.io/maskinen/result:${TAG} -t ghcr.io/maskinen/result:latest --push
+          docker buildx build result \
+            -t $REGISTRY/result:${TAG} \
+            -t $REGISTRY/result:latest \
+            --push

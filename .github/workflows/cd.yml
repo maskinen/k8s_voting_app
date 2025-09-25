@@ -1,0 +1,32 @@
+name: CD
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [ "completed" ]
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download values from CI
+        uses: actions/download-artifact@v4
+        with: { name: values-ci, path: dist }
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with: { version: 'v1.30.0' }
+
+      - name: Kubeconfig
+        run: |
+          echo "${KUBE_CONFIG}" | base64 -d > $HOME/.kube/config
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Helm install/upgrade
+        uses: azure/setup-helm@v4
+      - run: |
+          helm upgrade --install voting ./helm -n voting --create-namespace -f dist/values-ci.yaml

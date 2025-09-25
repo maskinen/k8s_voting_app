@@ -1,0 +1,25 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS rounds (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS options (
+  id UUID PRIMARY KEY,
+  round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  label TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS votes (
+  id BIGSERIAL PRIMARY KEY,
+  round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  option_id UUID NOT NULL REFERENCES options(id) ON DELETE CASCADE,
+  voter_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS votes_round_idx  ON votes(round_id);
+CREATE INDEX IF NOT EXISTS votes_option_idx ON votes(option_id);

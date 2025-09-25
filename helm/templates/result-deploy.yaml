@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: result }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: result } }
+  template:
+    metadata: { labels: { app: result } }
+    spec:
+      containers:
+        - name: result
+          image: {{ .Values.image.registry }}/result:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: voting-secrets, key: DATABASE_URL }
+          ports: [{ containerPort: 3000, name: http }]

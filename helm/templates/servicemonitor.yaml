@@ -1,0 +1,15 @@
+{{- if .Values.prometheus.serviceMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: voting
+spec:
+  selector:
+    matchExpressions:
+      - { key: app, operator: In, values: ["vote","worker"] }
+  namespaceSelector: { any: true }
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+{{- end }}

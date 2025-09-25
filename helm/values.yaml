@@ -1,0 +1,18 @@
+image:
+  registry: ghcr.io/maskinen # <--- change to your org/user
+  tag: latest
+  pullPolicy: IfNotPresent
+
+db:
+  user: postgres
+  password: dev
+  name: vote
+  storage: 1Gi
+
+ingress:
+  enabled: false
+  className: nginx
+  host: voting.local
+
+prometheus:
+  serviceMonitor: true   # set true if you have Prometheus Operator

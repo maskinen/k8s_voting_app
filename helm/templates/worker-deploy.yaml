@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: worker }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: worker } }
+  template:
+    metadata:
+      labels: { app: worker }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.registry }}/worker:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ containerPort: 8080, name: http }]

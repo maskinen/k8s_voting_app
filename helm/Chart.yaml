@@ -1,0 +1,5 @@
+apiVersion: v2
+name: k8s-voting
+version: 0.1.0
+description: Voting app (vote+worker+result+postgres) with Prometheus metrics
+type: application

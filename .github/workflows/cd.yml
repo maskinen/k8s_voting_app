@@ -9,47 +9,55 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Derive image tag from CI head_sha
+      - name: Determine image tag from CI head_sha
         id: tag
         run: |
           SHA="${{ github.event.workflow_run.head_sha }}"
           echo "TAG=${SHA:0:7}" >> $GITHUB_ENV
           echo "Using TAG=${SHA:0:7}"
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.30.0'
-
-      - name: Setup helm
-        uses: azure/setup-helm@v4
-
-      - name: Write inline values (no artifacts)
+      - name: Check for kubeconfig secret
+        id: gate
         run: |
-          mkdir -p dist
-          cat > dist/values-ci.yaml <<EOF
-          image:
-            registry: ghcr.io/maskinen
-            tag: ${TAG}
-          EOF
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
+            echo "no_kube=1" >> $GITHUB_OUTPUT
+          else
+            echo "no_kube=0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Configure kubeconfig
+        if: steps.gate.outputs.no_kube == '0'
         run: |
           mkdir -p "$HOME/.kube"
           echo "${KUBE_CONFIG}" | base64 -d | tr -d '\r' > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
-          
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
       - name: Sanity check kubectl
+        if: steps.gate.outputs.no_kube == '0'
         run: |
           kubectl version --client
-          kubectl config current-context || true
-          kubectl get ns || true
+          kubectl config current-context
+          kubectl get ns
 
+      - name: Setup helm
+        if: steps.gate.outputs.no_kube == '0'
+        uses: azure/setup-helm@v4
 
       - name: Helm upgrade/install
+        if: steps.gate.outputs.no_kube == '0'
         run: |
-          helm upgrade --install voting ./helm -n voting --create-namespace -f dist/values-ci.yaml
+          helm upgrade --install voting ./helm -n voting --create-namespace \
+            --set image.registry=ghcr.io/maskinen \
+            --set image.tag=${TAG}
+
+      - name: No-op (no kubeconfig provided)
+        if: steps.gate.outputs.no_kube == '1'
+        run: |
+          echo "No KUBE_CONFIG secret set; skipping cluster deploy. CI completed successfully."

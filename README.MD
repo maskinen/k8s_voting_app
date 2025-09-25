@@ -67,10 +67,6 @@ The PostgreSQL database stores voting rounds, options, and votes. Initialization
 
 All services expose Prometheus-compatible metrics endpoints for easy integration with monitoring solutions.
 
-## License
-
-MIT (or specify your license here)
-
 ---
 
 This app is ideal for learning, prototyping, or demonstrating microservices deployment in Kubernetes environments.

@@ -14,6 +14,19 @@ jobs:
 
       - name: Set image tag
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        
+      - name: Build & Push vote
+        run: |
+         docker buildx build vote   -t ghcr.io/maskinen/vote:${TAG}   -t ghcr.io/maskinen/vote:latest   --push
+         
+      - name:  Build & Push worker
+        run: |
+         docker buildx build worker -t ghcr.io/maskinen/worker:${TAG} -t ghcr.io/maskinen/worker:latest --push
+         
+      - name:  Build & Push result
+        run: |
+         docker buildx build result -t ghcr.io/maskinen/result:${TAG} -t ghcr.io/maskinen/result:latest --push
+       
 
       - uses: docker/setup-buildx-action@v3
 
@@ -23,13 +36,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}   # ← använd inbyggda token
-
-      - name: Build & Push vote
-        run: docker buildx build vote   -t ghcr.io/maskinen/vote:${TAG}   --push
-      - name: Build & Push worker
-        run: docker buildx build worker -t ghcr.io/maskinen/worker:${TAG} --push
-      - name: Build & Push result
-        run: docker buildx build result -t ghcr.io/maskinen/result:${TAG} --push
 
       - name: Write values override
         run: |
